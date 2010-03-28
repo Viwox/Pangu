@@ -1,4 +1,18 @@
-test
-test2
-test3
-hello,Pangu
+================================================================
+ Pangu: a modern implementation of DBM
+ Copyright (C) 2010-2011 viwox,leonhong
+================================================================
+
+Pangu is a highly scalable, eventually consistent, distributed, structured 
+key-value store. 
+Contents of the directory tree is below.
+
+  ./doc/         - manuals and specifications
+  ./example/     - sample code of tutorial
+  ./test/		 - test code of tutorial
+  ./src/		 - code sources
+
+The Pangu website is at:	
+  http://github.com/Viwox/Pangu
+
+== END OF FILE ==
