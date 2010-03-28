@@ -9,8 +9,8 @@ Contents of the directory tree is below.
 
   ./doc/         - manuals and specifications
   ./example/     - sample code of tutorial
-  ./test/		 - test code of tutorial
-  ./src/		 - code sources
+  ./test/        - test code of tutorial
+  ./src/         - code sources
 
 The Pangu website is at:	
   http://github.com/Viwox/Pangu
