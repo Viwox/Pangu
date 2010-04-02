@@ -4,10 +4,21 @@
 typedef struct {
 } single_list_t;
 
+/*
+ * return:
+ *	0	-	success
+ *	-1	-	failure
+ */
+
 int single_list_create(single_list_t**);
 
 int single_list_size(single_list_t*);
 
+/*
+ * return:
+ *	0	-	success
+ *	-1	-	failure
+ */
 int single_list_push(single_list_t*, void*);
 
 void single_list_pop(single_list_t*);
