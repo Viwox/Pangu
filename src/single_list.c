@@ -39,7 +39,7 @@ int single_list_push_back(single_list_t *q, void *pdata) {
 	return PANGU_OK;
 }
 
-int single_list_pop_front(single_list_t *q) {
+void single_list_pop_front(single_list_t *q) {
 	list_node *item;
 	item = q->header->next;
 	q->header->next = item->next;
@@ -52,7 +52,7 @@ void* single_list_front(single_list_t *q) {
 	return q->header->next->pdata;
 }
 
-int single_list_destroy(single_list_t **q) {
+void single_list_destroy(single_list_t **q) {
 	while ((*q)->size--) {
 		list_node *item;
 		item = (*q)->header->next;
