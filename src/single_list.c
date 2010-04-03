@@ -45,7 +45,7 @@ void single_list_pop_front(single_list_t *q) {
 	q->header->next = item->next;
 	pangu_free(item);
 	--q->size;
-	return PANGU_OK;
+	return ;
 }
 
 void* single_list_front(single_list_t *q) {
@@ -61,5 +61,5 @@ void single_list_destroy(single_list_t **q) {
 	}
 	pangu_free((*q)->header);
 	pangu_free(*q);
-	return PANGU_MEMORY_NOT_ENOUGH;
+	return ;
 }
