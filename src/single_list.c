@@ -7,63 +7,59 @@
 #include <stdlib.h>
 #include "single_list.h"
 
-ssize_t single_list_create(single_list_s **q) {
-	single_list_t *item;
-	item = (single_list_t*)pangu_malloc(sizeof(single_list_t));
+int single_list_create(single_list_t **q) {
+	list_node *item;
+	item = (list_node*)pangu_malloc(sizeof(list_node));
 	if (!item) {
-		return PANGU_ERROR;
+		return PANGU_MEMORY_NOT_ENOUGH;
 	}
-	item->prev = item, item->next = item, item->data = -1;
-	*q = (single_list_s*)pangu_malloc(sizeof(single_list_s));
+	item->next = item, item->pdata = 0;
+	*q = (single_list_t*)pangu_malloc(sizeof(single_list_t));
 	if (!*q) {
-		return PANGU_ERROR;
+		return PANGU_MEMORY_NOT_ENOUGH;
 	}
-	(*q)->header = item, (*q)->size = 0;
+	(*q)->header = item, (*q)->tail = item, (*q)->size = 0;
 	return PANGU_OK;
 }
 
-size_t single_list_size(single_list_s *q) {
+size_t single_list_size(single_list_t *q) {
 	return q->size;
 }
 
-ssize_t single_list_push(single_list_s *q, void *pfd) {
-	single_list_t *item;
-	item = (single_list_t*)pangu_malloc(sizeof(single_list_t));
+int single_list_push_back(single_list_t *q, void *pdata) {
+	list_node *item;
+	item = (list_node*)pangu_malloc(sizeof(list_node));
 	if (!item) {
-		return PANGU_ERROR;
+		return PANGU_MEMORY_NOT_ENOUGH;
 	}
-	item->data = *((int*)pfd);
-	q->header->prev->next = item;
-	item->prev = q->header->prev;
-	q->header->prev = item;
-	item->next = q->header;
+	item->pdata = pdata, item->next = 0;
+	q->tail->next = item;
+	q->tail = item;
 	++q->size;
 	return PANGU_OK;
 }
 
-ssize_t single_list_pop(single_list_s *q) {
-	single_list_t *destory_item;
-	destory_item = q->header->next;
-	q->header->next = q->header->next->next;
-	q->header->next->prev = q->header;
-	pangu_free(destory_item);
+int single_list_pop_front(single_list_t *q) {
+	list_node *item;
+	item = q->header->next;
+	q->header->next = item->next;
+	pangu_free(item);
 	--q->size;
 	return PANGU_OK;
 }
 
-void* single_list_top(single_list_s *q) {
-	return (void*)(&(q->header->next->data));
+void* single_list_front(single_list_t *q) {
+	return q->header->next->pdata;
 }
 
-ssize_t single_list_destroy(single_list_s **q) {
-	while (((*q)->size)--) {
-		single_list_t *item;
+int single_list_destroy(single_list_t **q) {
+	while ((*q)->size--) {
+		list_node *item;
 		item = (*q)->header->next;
 		(*q)->header->next = (*q)->header->next->next;
-		(*q)->header->next->prev = (*q)->header;
 		pangu_free(item);
 	}
 	pangu_free((*q)->header);
 	pangu_free(*q);
-	return PANGU_ERROR;
+	return PANGU_MEMORY_NOT_ENOUGH;
 }
