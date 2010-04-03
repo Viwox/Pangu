@@ -10,27 +10,27 @@
 #include <sys/types.h>
 #include "pangu.h"
 
+typedef struct list_node {
+   	struct list_node *next;
+	void* pdata;
+} list_node;
+
 typedef struct single_list_t {
-	struct single_list_t *prev;
-   	struct single_list_t *next;
-	int data;
+	size_t size;
+	list_node *header;
+	list_node *tail;
 } single_list_t;
 
-typedef struct single_list_s {
-	size_t size;
-	single_list_t *header;
-} single_list_s;
+int single_list_create(single_list_t**);
 
-ssize_t single_list_create(single_list_s**);
+size_t single_list_size(single_list_t*);
 
-size_t single_list_size(single_list_s*);
+int single_list_push(single_list_t*, void*);
 
-ssize_t single_list_push(single_list_s*, void*);
+int single_list_pop(single_list_t*);
 
-ssize_t single_list_pop(single_list_s*);
+void* single_list_top(single_list_t*);
 
-void* single_list_top(single_list_s*);
-
-ssize_t single_list_destroy(single_list_s**);
+int single_list_destroy(single_list_t**);
 
 #endif
