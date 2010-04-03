@@ -10,27 +10,27 @@
 #include <stdint.h>
 #include <time.h>
 
-typedef struct {							/* structure for "Pangu" database */
-	uint64_t bucket_num;					/* number of the bucket array */
-	uint8_t apow;							/* power of record alignment */
-	char *path;								/* path of the database file */
-	int fd;									/* file descriptor of the database file */
-	uint64_t rec_num;						/* number of the records */
-	uint64_t file_size;						/* size of the database file */
-	uint64_t first_rec_off;					/* offset of the first record */
-	uint64_t last_rec_off;					/* offset of the last record */
-	char *map;								/* pointer to the mapped memory */
-	uint64_t map_size;						/* size of the mapped memory */
-	uint32_t *hashtable;					/* a bucket array */
-	time_t mtime;							/* modification time */
+typedef struct {                        /* structure for "Pangu" database */
+	uint64_t bucket_num;                /* number of the bucket array */
+	uint8_t apow;                       /* power of record alignment */
+	char *path;                         /* path of the database file */
+	int fd;                             /* file descriptor of the database file */
+	uint64_t rec_num;                   /* number of the records */
+	uint64_t file_size;                 /* size of the database file */
+	uint64_t first_rec_off;             /* offset of the first record */
+	uint64_t last_rec_off;              /* offset of the last record */
+	char *map;                          /* pointer to the mapped memory */
+	uint64_t map_size;                  /* size of the mapped memory */
+	uint32_t *hashtable;                /* a bucket array */
+	time_t mtime;                       /* modification time */
 } database_t;
 
-typedef struct {							/* structure of "Pangu" database for record*/
-	uint32_t off;							/* offset of the record */
-	uint32_t prev_off;						/* offset of the prev record */
-	uint32_t next_off;						/* offset of the next record */
-	uint32_t key_size;						/* size of key */
-	uint32_t value_size;					/* size of value */
+typedef struct {                        /* structure of "Pangu" database for record*/
+	uint32_t off;                       /* offset of the record */
+	uint32_t prev_off;                  /* offset of the prev record */
+	uint32_t next_off;                  /* offset of the next record */
+	uint32_t key_size;                  /* size of key */
+	uint32_t value_size;                /* size of value */
 } record_t;
 
 
