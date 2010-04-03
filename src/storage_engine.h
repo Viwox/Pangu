@@ -31,6 +31,8 @@ typedef struct {                        /* structure of "Pangu" database for rec
 	uint32_t next_off;                  /* offset of the next record */
 	uint32_t key_size;                  /* size of key */
 	uint32_t value_size;                /* size of value */
+	char *key;                          /* key */
+	char *value;                        /* value */
 } record_t;
 
 
