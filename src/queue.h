@@ -8,7 +8,7 @@ typedef struct {
 } queue_t;
 
 int queue_create(queue_t** q) {
-	*q = (queue_t)pangu_malloc(sizeof(queue_t));
+	*q = (queue_t*)pangu_malloc(sizeof(queue_t));
 	if (*q == NULL) {
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
