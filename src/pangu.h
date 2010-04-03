@@ -3,6 +3,7 @@
 
 #define PANGU_OK 0
 #define PANGU_ERROR -1
+#define PANGU_MEMMORY_NOT_ENOUGH -2
 #define pangu_malloc malloc
 #define pangu_free free
 
