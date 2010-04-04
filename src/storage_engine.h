@@ -69,7 +69,7 @@ int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size)
 
 int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path);
 
-int *storage_engine_str_dup(const void *str, void **res);
+int storage_engine_str_dup(const void *str, void **res);
 
 void storage_engine_msg(int ecode, const char *filename, int line, const char *func);
 
