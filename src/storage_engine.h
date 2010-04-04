@@ -11,7 +11,6 @@
 #include <time.h>
 
 #define HDBFILEMODE 644
-#define HDBIOBUF 1024
 #define HDBHEADERSIZE 256
 
 typedef struct {                        /* structure for "Pangu" database */
@@ -71,7 +70,7 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path);
 
 int storage_engine_str_dup(const void *str, void **res);
 
-void storage_engine_msg(int ecode, const char *filename, int line, const char *func);
+//void storage_engine_msg(int ecode, const char *filename, int line, const char *func);
 
 int storage_engine_write(int fd, const void *buf, size_t size);
 
