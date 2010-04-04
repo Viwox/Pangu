@@ -20,7 +20,7 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 		storage_engine_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
-	int fd = open(path, O_RDWR, HDBFILEMODE);
+	int fd = open(path, O_RDWR|O_CREAT, HDBFILEMODE);
 	if (fd < 0) {
 		storage_engine_msg(PANGU_OPEN_FILE_FAIL, __FILE__, __LINE__, __func__);
 		return PANGU_OPEN_FILE_FAIL;
@@ -67,6 +67,7 @@ int storage_engine_write(int fd, const void *buf, size_t size) {
 	}while(size > 0);
 	return PANGU_OK;
 }
+
 void storage_engine_dup_meta(database_t *hdb, const char *hbuf) {
 	memset(hbuf, 0, HDBHEADERSIZE);
 	sprintf(hbuf, "%s\n", PANGU_VERSION);
