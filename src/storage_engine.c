@@ -45,11 +45,6 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	void *map = mmap(0, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	hdb->map = map;
 	hdb->hashtable = (uint32_t*)((char*)map + HDBHEADERSIZE);
-	struct stat sbuf;
-	if (fstat(fd, &sbuf) == -1) {
-		storage_engine_msg(PANGU_STAT_FILE_FAIL, __FILE__, __LINE__, __func__); 
-		return PANGU_STAT_FILE_FAIL;
-	}
 	return PANGU_OK;
 }
 
