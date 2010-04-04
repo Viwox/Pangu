@@ -36,13 +36,13 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	hdb->first_rec_off = hdb->file_size;
 	hdb->last_rec_off = hdb->file_size;
 	char buf[HDBIOBUF];
-	storage_engine_dup_meta(hdb, hbuf);
+	storage_engine_dup_meta(hdb, buf);
 	if (storage_engine_write(fd, buf, HDBIOBUF) != PANGU_OK) {
 		storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
 		return PANGU_WRITE_FILE_FAIL;
 	}
-	hdd->map_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
-	void *map = mmap(0, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	hdb->map_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
+	void *map = mmap(0, hdb->map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	hdb->map = map;
 	hdb->hashtable = (uint32_t*)((char*)map + HDBHEADERSIZE);
 	return PANGU_OK;
@@ -69,7 +69,7 @@ int storage_engine_write(int fd, const void *buf, size_t size) {
 }
 void storage_engine_dup_meta(database_t *hdb, const char *hbuf) {
 	memset(hbuf, 0, HDBHEADERSIZE);
-	sprintf(hbuf, "%s\n", PANGU_VERSION,);
+	sprintf(hbuf, "%s\n", PANGU_VERSION);
 	uint64_t lnum;
 	lnum = hdb->bucket_num;
 	memcpy(hbuf + 32, &lnum, sizeof(lnum));
@@ -77,11 +77,11 @@ void storage_engine_dup_meta(database_t *hdb, const char *hbuf) {
 	memcpy(hbuf + 40, &lnum, sizeof(lnum));
 	lnum = hdb->file_size;
 	memcpy(hbuf + 48, &lnum, sizeof(lnum));
-	lnum = hdb->frec;
+	lnum = hdb->first_rec_off;
 	memcpy(hbuf + 56, &lnum, sizeof(lnum));  
 }
 
-int *storage_engine_str_dup(const void *str, void **res) {
+int storage_engine_str_dup(const void *str, void **res) {
 	assert(str);
 	size_t size = strlen(str);
 	char *p = (char*)pangu_malloc(size + 1);
@@ -91,7 +91,7 @@ int *storage_engine_str_dup(const void *str, void **res) {
 	}
 	memcpy(p, str, size);
 	p[size] = '\0';
-	*res = p
+	*res = p;
 	return PANGU_OK;
 }
 
@@ -99,22 +99,23 @@ void storage_engine_msg(int ecode, const char *filename, int line, const char *f
 	char err_msg[HDBIOBUF];
 	switch(ecode) {
 		case PANGU_MEMORY_NOT_ENOUGH : 
-			strcpy(buf, "malloc error!\n"); 
+			strcpy(err_msg, "malloc error!\n"); 
 			break;
-		case PANGU_OPEN_FILE_FAIL
-			strcpy(buf, "file open error!\n");
+		case PANGU_OPEN_FILE_FAIL :
+			strcpy(err_msg, "file open error!\n");
 			break;
-		case PANGU_WRITR_FILE_FAIL
-			strcpy(buf, "file write error!\n");
+		case PANGU_WRITE_FILE_FAIL :
+			strcpy(err_msg, "file write error!\n");
 			break;
-		case PANGU_STAT_FILE_FAIL
-			strcpy(buf, "file stat error!\n");
+		case PANGU_STAT_FILE_FAIL :
+			strcpy(err_msg, "file stat error!\n");
 			break;
 		default :
-			strcpy(buf, "unknown error!\n");
+			strcpy(err_msg, "unknown error!\n");
 			break;
 	}
 	char buf[HDBIOBUF];
 	sprintf(buf, "ERROR :%s:%d:%s:%d:%s\n", filename, line, func, ecode, err_msg);
+	printf("%s\n", buf);
 	return;
 }
