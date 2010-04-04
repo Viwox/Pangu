@@ -35,7 +35,7 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	hdb->file_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
 	hdb->first_rec_off = hdb->file_size;
 	hdb->last_rec_off = hdb->file_size;
-	buf[HDBIOBUF];
+	char buf[HDBIOBUF];
 	storage_engine_dup_meta(hdb, hbuf);
 	if (storage_engine_write(fd, buf, HDBIOBUF) != PANGU_OK) {
 		storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
