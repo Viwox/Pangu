@@ -104,6 +104,12 @@ void storage_engine_msg(int ecode, const char *filename, int line, const char *f
 		case PANGU_OPEN_FILE_FAIL
 			strcpy(buf, "file open error!\n");
 			break;
+		case PANGU_WRITR_FILE_FAIL
+			strcpy(buf, "file write error!\n");
+			break;
+		case PANGU_STAT_FILE_FAIL
+			strcpy(buf, "file stat error!\n");
+			break;
 		default :
 			strcpy(buf, "unknown error!\n");
 			break;
