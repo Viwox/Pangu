@@ -17,17 +17,17 @@
 int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	hdb->bucket_num = bucket_num;
 	if (storage_engine_str_dup(path, &hdb->path) != PANGU_OK) {
-		storage_engine_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
 	int fd = open(path, O_RDWR|O_CREAT, HDBFILEMODE);
 	if (fd < 0) {
-		storage_engine_msg(PANGU_OPEN_FILE_FAIL, __FILE__, __LINE__, __func__);
+		error_msg(PANGU_OPEN_FILE_FAIL, __FILE__, __LINE__, __func__);
 		return PANGU_OPEN_FILE_FAIL;
 	}
 	struct stat sbuf;
 	if (fstat(fd, &sbuf) == -1) {
-		storage_engine_msg(PANGU_STAT_FILE_FAIL, __FILE__, __LINE__, __func__); 
+		error_msg(PANGU_STAT_FILE_FAIL, __FILE__, __LINE__, __func__); 
 		return PANGU_STAT_FILE_FAIL;
 	}
 	hdb->mtime = sbuf.st_mtime;
@@ -38,7 +38,7 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	char buf[HDBIOBUF];
 	storage_engine_dup_meta(hdb, buf);
 	if (storage_engine_write(fd, buf, HDBIOBUF) != PANGU_OK) {
-		storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
+		error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
 		return PANGU_WRITE_FILE_FAIL;
 	}
 	hdb->map_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
@@ -56,7 +56,7 @@ int storage_engine_write(int fd, const void *buf, size_t size) {
 		switch(write_size) {
 			case -1 : 
 				if (errno != EINTR) {
-					storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
+					error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
 					return PANGU_WRITE_FILE_FAIL;
 				}
 			case 0 : break;
@@ -88,7 +88,7 @@ int storage_engine_str_dup(const void *str, void **res) {
 	size_t size = strlen(str);
 	char *p = (char*)pangu_malloc(size + 1);
 	if (!p) {
-		storage_engine_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
 	memcpy(p, str, size);
@@ -97,7 +97,7 @@ int storage_engine_str_dup(const void *str, void **res) {
 	return PANGU_OK;
 }
 
-void storage_engine_msg(int ecode, const char *filename, int line, const char *func) {
+/*void error_msg(int ecode, const char *filename, int line, const char *func) {
 	char err_msg[HDBIOBUF];
 	switch(ecode) {
 		case PANGU_MEMORY_NOT_ENOUGH : 
@@ -121,3 +121,8 @@ void storage_engine_msg(int ecode, const char *filename, int line, const char *f
 	printf("%s\n", buf);
 	return;
 }
+*/
+int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, const void* value_buf, size_t value_size) {
+	return PANGU_OK;	
+}
+
