@@ -10,9 +10,12 @@
 #include <stdint.h>
 #include <time.h>
 
+#define HDBFILEMODE 644
+#define HDBIOBUF 1024
+#define HDBHEADERSIZE 256
+
 typedef struct {                        /* structure for "Pangu" database */
 	uint64_t bucket_num;                /* number of the bucket array */
-	uint8_t apow;                       /* power of record alignment */
 	char *path;                         /* path of the database file */
 	int fd;                             /* file descriptor of the database file */
 	uint64_t rec_num;                   /* number of the records */
@@ -62,5 +65,16 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
  * `key_size' specifies the size of the region of the key.
  * If successful, the return value is true, else, it is false. */
 int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size);
+
+
+int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path);
+
+int *storage_engine_str_dup(const void *str, void **res);
+
+void storage_engine_msg(int ecode, const char *filename, int line, const char *func);
+
+int storage_engine_write(int fd, const void *buf, size_t size);
+
+void storage_engine_dup_meta(database_t *hdb, const char *hbuf);
 
 #endif
