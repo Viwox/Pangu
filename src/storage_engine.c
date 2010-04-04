@@ -55,9 +55,10 @@ int storage_engine_write(int fd, const void *buf, size_t size) {
 		int write_size = write(fd, p, size);
 		switch(write_size) {
 			case -1 : 
-				if (errno != EINTR) 
-				storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
-				return PANGU_WRITE_FILE_FAIL;
+				if (errno != EINTR) {
+					storage_engine_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
+					return PANGU_WRITE_FILE_FAIL;
+				}
 			case 0 : break;
 			default :
 				p += write_size;
