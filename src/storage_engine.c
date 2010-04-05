@@ -11,10 +11,11 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include "pangu.h"
 #include "storage_engine.h"
 
-int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
+int storage_engine_open(database_t *hdb, uint64_t bucket_num, char *path) {
 	hdb->bucket_num = bucket_num;
 	if (storage_engine_str_dup(path, &hdb->path) != PANGU_OK) {
 		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
@@ -35,16 +36,16 @@ int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path) {
 	hdb->file_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
 	hdb->first_rec_off = hdb->file_size;
 	hdb->last_rec_off = hdb->file_size;
-	char buf[HDBIOBUF];
+	char buf[HDBHEADERSIZE];
 	storage_engine_dup_meta(hdb, buf);
-	if (storage_engine_write(fd, buf, HDBIOBUF) != PANGU_OK) {
+	if (storage_engine_write(fd, buf, HDBHEADERSIZE) != PANGU_OK) {
 		error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__); 
 		return PANGU_WRITE_FILE_FAIL;
 	}
 	hdb->map_size = HDBHEADERSIZE + hdb->bucket_num * sizeof(uint64_t);
 	void *map = mmap(0, hdb->map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	hdb->map = map;
-	hdb->hashtable = (uint32_t*)((char*)map + HDBHEADERSIZE);
+	hdb->hashtable = (uint64_t*)((char*)map + HDBHEADERSIZE);
 	return PANGU_OK;
 }
 
@@ -106,20 +107,18 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 			error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
 			return PANGU_READ_FILE_FAIL;
 		}
-		if (hrec->next_off > 0) {
-			off = hrec->next_off;
-		} else {
-			break;
-		}
+		off = hrec->next_off;
 	}
-	hrec->next = 0;
+	hrec->off = hdb->file_size;
+	hrec->next_off = hdb->file_size+ hrec->size;
+	hrec->prev_off = off;
 	hrec->key_size = key_size;
 	hrec->value_size = value_size;
-	if (storage_engine_str_dup(key_buf, &hrec->key_buf) != PANGU_OK)
+	if (storage_engine_str_dup(key_buf, &hrec->key) != PANGU_OK) {
 		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
-	if (storage_engine_str_dup(value_buf, &hrec->value_buf) != PANGU_OK)
+	if (storage_engine_str_dup(value_buf, &hrec->value) != PANGU_OK) {
 		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
@@ -127,14 +126,16 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 		error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__);
 		return PANGU_WRITE_FILE_FAIL;
 	}
-	hdb->hashtable[bucketid] = hrec->off;
+	if (!hdb->hashtable[bucketid]) {
+		hdb->hashtable[bucketid] = hrec->off;
+	}
 	hdb->file_size += hrec->size;
-	hdb->last_rec_off = hredc->off;
+	hdb->last_rec_off = hrec->off;
 	pangu_free(hrec);
 	return PANGU_OK;
 }
 
-uint64_t storage_engine_hash1(database_t *hdb, const char *key_buf, int key_size){
+uint64_t storage_engine_hash1(database_t *hdb, const char *key_buf, int key_size) {
 	assert(hdb && key_buf && key_size >= 0);
 	uint64_t hash = 19780211;
 	while(key_size--)
@@ -168,8 +169,8 @@ int storage_engine_write_record(int fd, record_t *hrec) {
 	memcpy(hbuf + 24, &lnum, sizeof(lnum));
 	lnum = hrec->value_size;
 	memcpy(hbuf + 32, &lnum, sizeof(lnum));
-	memcpy(hbuf + 40, hrec->key_buf, hrec->key_size);
-	memcpy(hbuf + hrec->key_size, hrec->value_buf, hrec->value_size);
+	memcpy(hbuf + 40, hrec->key, hrec->key_size);
+	memcpy(hbuf + hrec->key_size, hrec->value, hrec->value_size);
 	hrec->size = 40 + hrec->key_size + hrec->value_size;
 	return storage_engine_write(fd, hbuf, hrec->size);
 }
@@ -188,9 +189,9 @@ int storage_engine_read_record(record_t *hrec, int fd, uint64_t off) {
 	hrec->key_size = *(uint64_t*)(p++);
 	hrec->value_size = *(uint64_t*)(p++);
 	hrec->size = *(uint64_t*)(p++);
-	memcpy(hrec->key_buf, p, hrec->key_size);
+	memcpy(hrec->key, p, hrec->key_size);
 	p += hrec->key_size;
-	memcpy(hrec->value_buf, p, hrec->value_size);
+	memcpy(hrec->value, p, hrec->value_size);
 	p += hrec->value_size;
 	return PANGU_OK;
 }
