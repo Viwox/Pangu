@@ -86,6 +86,8 @@ int storage_engine_read_record(record_t *hrec, int fd, uint64_t off);
 
 int storage_engine_seekread(int fd, off_t off, void *buf, size_t size);
 
+int storage_engine_seekwrite(int fd, off_t off, void *buf, size_t size);
+
 int storage_engine_read(int fd, void* buf, size_t size);
 
 #endif
