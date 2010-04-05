@@ -97,32 +97,133 @@ int storage_engine_str_dup(const void *str, void **res) {
 	return PANGU_OK;
 }
 
-/*void error_msg(int ecode, const char *filename, int line, const char *func) {
-	char err_msg[HDBIOBUF];
-	switch(ecode) {
-		case PANGU_MEMORY_NOT_ENOUGH : 
-			strcpy(err_msg, "malloc error!\n"); 
-			break;
-		case PANGU_OPEN_FILE_FAIL :
-			strcpy(err_msg, "file open error!\n");
-			break;
-		case PANGU_WRITE_FILE_FAIL :
-			strcpy(err_msg, "file write error!\n");
-			break;
-		case PANGU_STAT_FILE_FAIL :
-			strcpy(err_msg, "file stat error!\n");
-			break;
-		default :
-			strcpy(err_msg, "unknown error!\n");
-			break;
-	}
-	char buf[HDBIOBUF];
-	sprintf(buf, "ERROR :%s:%d:%s:%d:%s\n", filename, line, func, ecode, err_msg);
-	printf("%s\n", buf);
-	return;
-}
-*/
 int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, const void* value_buf, size_t value_size) {
-	return PANGU_OK;	
+	uint64_t bucketid = storage_engine_hash2(hdb, key_buf, key_size);
+	uint64_t off = storage_engine_get_bucket(hdb, bucketid);
+	record_t *hrec = (record_t*)malloc(sizeof(record_t));
+	while (off > 0) {
+		if (storage_engine_read_record(hrec, hdb->fd, off) != PANGU_OK) {
+			error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
+			return PANGU_READ_FILE_FAIL;
+		}
+		if (hrec->next_off > 0) {
+			off = hrec->next_off;
+		} else {
+			break;
+		}
+	}
+	hrec->next = 0;
+	hrec->key_size = key_size;
+	hrec->value_size = value_size;
+	if (storage_engine_str_dup(key_buf, &hrec->key_buf) != PANGU_OK)
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		return PANGU_MEMORY_NOT_ENOUGH;
+	}
+	if (storage_engine_str_dup(value_buf, &hrec->value_buf) != PANGU_OK)
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		return PANGU_MEMORY_NOT_ENOUGH;
+	}
+	if (storage_engine_write_record(hdb->fd, hrec) != PANGU_OK) {
+		error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_WRITE_FILE_FAIL;
+	}
+	hdb->hashtable[bucketid] = hrec->off;
+	hdb->file_size += hrec->size;
+	hdb->last_rec_off = hredc->off;
+	pangu_free(hrec);
+	return PANGU_OK;
 }
 
+uint64_t storage_engine_hash1(database_t *hdb, const char *key_buf, int key_size){
+	assert(hdb && key_buf && key_size >= 0);
+	uint64_t hash = 19780211;
+	while(key_size--)
+		hash = (hash << 5) + (hash << 2) + hash + *(uint8_t *)key_buf++;
+	return hash % hdb->bucket_num;
+}
+
+uint64_t storage_engine_hash2(database_t *hdb, const char *key_buf, int key_size) {
+	assert(hdb && key_buf && key_size >= 0);
+	uint64_t hash = 5381;
+	while (key_size--)
+		hash = ((hash << 5) + hash) + (*key_buf++); /* hash * 33 + c */
+	return hash % hdb->bucket_num;
+}
+
+uint64_t storage_engine_get_bucket(database_t *hdb, uint64_t id) {
+	return hdb->hashtable[id];
+}
+
+int storage_engine_write_record(int fd, record_t *hrec) {
+	char hbuf[HDBIOBUF];
+	memset(hbuf, 0, HDBIOBUF);
+	uint64_t lnum;
+	lnum = hrec->off;
+	memcpy(hbuf, &lnum, sizeof(lnum));
+	lnum = hrec->prev_off;
+	memcpy(hbuf + 8, &lnum, sizeof(lnum));
+	lnum = hrec->next_off;
+	memcpy(hbuf + 16, &lnum, sizeof(lnum));
+	lnum = hrec->key_size;
+	memcpy(hbuf + 24, &lnum, sizeof(lnum));
+	lnum = hrec->value_size;
+	memcpy(hbuf + 32, &lnum, sizeof(lnum));
+	memcpy(hbuf + 40, hrec->key_buf, hrec->key_size);
+	memcpy(hbuf + hrec->key_size, hrec->value_buf, hrec->value_size);
+	hrec->size = 40 + hrec->key_size + hrec->value_size;
+	return storage_engine_write(fd, hbuf, hrec->size);
+}
+
+int storage_engine_read_record(record_t *hrec, int fd, uint64_t off) {
+	char hbuf[HDBIOBUF];
+	memset(hbuf, 0, HDBIOBUF);
+	char *p = hbuf;
+	if (storage_engine_seekread(fd, off, hbuf, HDBIOBUF) != PANGU_OK) {
+		error_msg(PANGU_SEEK_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_SEEK_FILE_FAIL;
+	}
+	hrec->off = *(uint64_t*)(p++);
+	hrec->prev_off = *(uint64_t*)(p++);
+	hrec->next_off = *(uint64_t*)(p++);
+	hrec->key_size = *(uint64_t*)(p++);
+	hrec->value_size = *(uint64_t*)(p++);
+	hrec->size = *(uint64_t*)(p++);
+	memcpy(hrec->key_buf, p, hrec->key_size);
+	p += hrec->key_size;
+	memcpy(hrec->value_buf, p, hrec->value_size);
+	p += hrec->value_size;
+	return PANGU_OK;
+}
+
+int storage_engine_seekread(int fd, off_t off, void *buf, size_t size) {
+	if (lseek(fd, off, SEEK_SET) == -1) {
+		error_msg(PANGU_SEEK_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_SEEK_FILE_FAIL;
+	}
+	if (storage_engine_read(fd, buf, size) != PANGU_OK) {
+		error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_READ_FILE_FAIL;
+	}
+	return PANGU_OK;
+}
+
+int storage_engine_read(int fd, void* buf, size_t size) {
+	assert(fd >= 0 && buf && size >= 0);
+	char *p = buf;
+	do {
+		int read_size = read(fd, p, size);
+		switch(read_size) {
+			case -1 : 
+				if (errno != EINTR) {
+					error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__); 
+					return PANGU_READ_FILE_FAIL;
+				}
+			case 0 : break;
+			default :
+				p += read_size;
+				size -= read_size;
+				break;
+		}
+	} while(size > 0);
+	return PANGU_OK;
+}
