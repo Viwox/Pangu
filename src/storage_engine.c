@@ -172,7 +172,7 @@ int storage_engine_write_record(int fd, record_t *hrec) {
 	memcpy(hbuf + 40, hrec->key, hrec->key_size);
 	memcpy(hbuf + hrec->key_size, hrec->value, hrec->value_size);
 	hrec->size = 40 + hrec->key_size + hrec->value_size;
-	return storage_engine_write(fd, hbuf, hrec->size);
+	return storage_engine_seekwrite(fd, hrec->off, hbuf, hrec->size);
 }
 
 int storage_engine_read_record(record_t *hrec, int fd, uint64_t off) {
@@ -208,6 +208,18 @@ int storage_engine_seekread(int fd, off_t off, void *buf, size_t size) {
 	return PANGU_OK;
 }
 
+int storage_engine_seekwrite(int fd, off_t off, void *buf, size_t size) {
+	if (lseek(fd, off, SEEK_SET) == -1) {
+		error_msg(PANGU_SEEK_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_SEEK_FILE_FAIL;
+	}
+	if (storage_engine_write(fd, buf, size) != PANGU_OK) {
+		error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
+		return PANGU_READ_FILE_FAIL;
+	}
+	return PANGU_OK;
+}
+
 int storage_engine_read(int fd, void* buf, size_t size) {
 	assert(fd >= 0 && buf && size >= 0);
 	char *p = buf;
@@ -225,6 +237,7 @@ int storage_engine_read(int fd, void* buf, size_t size) {
 				size -= read_size;
 				break;
 		}
+		break;	/*debug*/
 	} while(size > 0);
 	return PANGU_OK;
 }
