@@ -23,7 +23,7 @@ typedef struct {                        /* structure for "Pangu" database */
 	uint64_t last_rec_off;              /* offset of the last record */
 	char *map;                          /* pointer to the mapped memory */
 	uint64_t map_size;                  /* size of the mapped memory */
-	uint32_t *hashtable;                /* a bucket array */
+	uint64_t *hashtable;                /* a bucket array */
 	time_t mtime;                       /* modification time */
 } database_t;
 
@@ -66,12 +66,26 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
  * If successful, the return value is true, else, it is false. */
 int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size);
 
-int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path);
+int storage_engine_open(database_t *hdb, uint64_t bucket_num, char *path);
 
 int storage_engine_str_dup(const void *str, void **res);
 
 int storage_engine_write(int fd, const void *buf, size_t size);
 
 void storage_engine_dup_meta(database_t *hdb, const char *hbuf);
+
+uint64_t storage_engine_hash1(database_t *hdb, const char *key_buf, int key_size);
+
+uint64_t storage_engine_hash2(database_t *hdb, const char *key_buf, int key_size);
+
+uint64_t storage_engine_get_bucket(database_t *hdb, uint64_t id);
+
+int storage_engine_write_record(int fd, record_t *hrec);
+
+int storage_engine_read_record(record_t *hrec, int fd, uint64_t off);
+
+int storage_engine_seekread(int fd, off_t off, void *buf, size_t size);
+
+int storage_engine_read(int fd, void* buf, size_t size);
 
 #endif
