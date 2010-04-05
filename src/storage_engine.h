@@ -28,11 +28,12 @@ typedef struct {                        /* structure for "Pangu" database */
 } database_t;
 
 typedef struct {                        /* structure of "Pangu" database for record*/
-	uint32_t off;                       /* offset of the record */
-	uint32_t prev_off;                  /* offset of the prev record */
-	uint32_t next_off;                  /* offset of the next record */
-	uint32_t key_size;                  /* size of key */
-	uint32_t value_size;                /* size of value */
+	uint64_t off;                       /* offset of the record */
+	uint64_t prev_off;                  /* offset of the prev record */
+	uint64_t next_off;                  /* offset of the next record */
+	uint64_t key_size;                  /* size of key */
+	uint64_t value_size;                /* size of value */
+	uint64_t size;                      /* size of record */
 	char *key;                          /* key */
 	char *value;                        /* value */
 } record_t;
@@ -65,12 +66,9 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
  * If successful, the return value is true, else, it is false. */
 int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size);
 
-
 int storage_engine_init(database_t *hdb, uint64_t bucket_num, char *path);
 
 int storage_engine_str_dup(const void *str, void **res);
-
-//void storage_engine_msg(int ecode, const char *filename, int line, const char *func);
 
 int storage_engine_write(int fd, const void *buf, size_t size);
 
