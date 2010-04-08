@@ -1,3 +1,8 @@
+
+/*
+* Copyright (C) leon.hong
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "storage_engine.h"
@@ -15,12 +20,9 @@ int runversion(int argc, char **argv);
 /* main routine */
 int main(int argc, char *argv[]) {
 	if(argc < 2) usage();
-	database_t pgdb;
-	if (storage_engine_open(&pgdb, 1024, "pangu.db")) {
-		error_msg(PANGU_OPEN_FILE_FAIL, __FILE__, __LINE__, __func__);
-		return PANGU_OPEN_FILE_FAIL;
-	}
 	int rv = 0;
+	database_t pgdb;
+	if ((rv = storage_engine_open(&pgdb, 1024, "pangu.db")) != PANGU_OK) return rv;
 	char value[value_size];
 	if(!strcmp(argv[1], "set")) {
 		if ((rv = storage_engine_set(&pgdb, argv[2], strlen(argv[2]), argv[3], strlen(argv[3]))) != PANGU_OK)
