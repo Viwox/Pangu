@@ -161,4 +161,10 @@ int storage_engine_write_currecord_nextoff(int fd, off_t off, record_t *hrec);
  * If successful, the return value is PANGU_OK. */
 int storage_engine_read_record_size(int fd, record_t *hrec, off_t off, uint64_t *psize);
 
+/* Copy a record.
+ * `src' pointer to the src ecord.
+ * `des' pointer to the des record.
+ * If successful, the return value is PANGU_OK. */
+int storage_engine_copy_record(record_t *src, record_t *des);
+
 #endif
