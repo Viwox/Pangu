@@ -126,6 +126,7 @@ int storage_engine_str_dup(const void *str, void **res) {
 
 /* Store a record into a hash database object. */
 int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, const void* value_buf, size_t value_size) {
+	assert(key_buf && key_size >= 0 && value_buf && value_size >= 0);
 	uint64_t bucketid = storage_engine_hash2(hdb, key_buf, key_size);
 	uint64_t off = storage_engine_get_bucket(hdb, bucketid);
 	record_t *hrec = (record_t*)pangu_malloc(sizeof(record_t));
@@ -345,6 +346,7 @@ int storage_engine_read(int fd, void* buf, size_t size) {
 
 /* Get a record in a hash database object. */
 int storage_engine_get(database_t *hdb, const void *key_buf, size_t key_size, char *value_buf, size_t *value_size) {
+	assert(key_buf && key_size >= 0 && value_buf && value_size >= 0);
 	uint64_t bucketid = storage_engine_hash2(hdb, key_buf, key_size);
 	uint64_t off = storage_engine_get_bucket(hdb, bucketid);
 	if (!off) {
@@ -375,6 +377,7 @@ int storage_engine_get(database_t *hdb, const void *key_buf, size_t key_size, ch
 
 /* Remove a record of a database object. */
 int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size) {
+	assert(key_buf && key_size >= 0);
 	uint64_t bucketid = storage_engine_hash2(hdb, key_buf, key_size);
 	uint64_t off = storage_engine_get_bucket(hdb, bucketid);
 	if (!off) {
