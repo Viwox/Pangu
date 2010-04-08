@@ -372,6 +372,7 @@ int storage_engine_get(database_t *hdb, const void *key_buf, size_t key_size, ch
 		pangu_free(hrec->key);
 		pangu_free(hrec->value);
 	} /* end while */
+	pangu_free(hrec);
 	return PANGU_GET_FAIL;
 }
 
@@ -383,6 +384,73 @@ int storage_engine_remove(database_t *hdb, const void *key_buf, size_t key_size)
 	if (!off) {
 		return PANGU_REMOVE_FAIL;
 	}
-	hdb->hashtable[bucketid] = 0;
+	record_t *hrec = (record_t*)pangu_malloc(sizeof(record_t));
+	if (!hrec) {
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		return PANGU_MEMORY_NOT_ENOUGH;
+	}
+	record_t *prev;
+	while (off > 0) {
+		if (storage_engine_read_record(hrec, hdb->fd, off) != PANGU_OK) {
+			error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
+			return PANGU_READ_FILE_FAIL;
+		}
+		prev = (char*)pangu_malloc(sizeof(record_t));
+		if (!prev) {
+			error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+			return PANGU_MEMORY_NOT_ENOUGH;
+		}
+		if (!strcmp(hrec->key, key_buf) && hrec->next_off) {
+			prev->next_off = hrec->next_off;
+			/* write prev record*/
+			if (storage_engine_write_currecord_nextoff(hdb->fd, prev->off, prev) != PANGU_OK) {
+				error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__);
+				return PANGU_WRITE_FILE_FAIL;
+			}
+			break;
+		}
+		if (!hrec->next_off) {
+			hdb->hashtable[bucketid] = 0;
+			break;
+		}
+		if (storage_engine_copy_record(hrec, prev) != PANGU_OK) {
+			error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+			return PANGU_MEMORY_NOT_ENOUGH;
+		}
+		off = hrec->next_off;
+		pangu_free(hrec->key);
+		pangu_free(hrec->value);
+		pangu_free(prev);
+	}
+	pangu_free(hrec->key);
+	pangu_free(hrec->value);
+	pangu_free(prev);
+	pangu_free(hrec);
+	return PANGU_OK;
+}
+
+/* Copy a record. */
+int storage_engine_copy_record(record_t *src, record_t *des) {
+	assert(src && des);
+	des->off = src->off;
+	des->prev_off = src->prev_off;
+	des->next_off = src->next_off;
+	des->key_size = src->key_size;
+	des->value_size = src->value_size;
+	des->size = src->size;
+	des->key = (char*)pangu_malloc(sizeof(des->key_size) + 1);
+	if (!des->key) {
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		return PANGU_MEMORY_NOT_ENOUGH;
+	}
+	memcpy(des->key, src->key, des->key_size);
+	des->key[des->key_size] = '\0';
+	des->value = (char*)pangu_malloc(sizeof(des->value_size) + 1);
+	if (!des->value) {
+		error_msg(PANGU_MEMORY_NOT_ENOUGH, __FILE__, __LINE__, __func__);
+		return PANGU_MEMORY_NOT_ENOUGH;
+	}
+	memcpy(des->value, src->value, des->value_size);
+	des->value[des->value_size] = '\0';
 	return PANGU_OK;
 }
