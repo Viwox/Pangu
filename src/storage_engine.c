@@ -135,11 +135,9 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 		return PANGU_MEMORY_NOT_ENOUGH;
 	}
 	if (!off) {
-		hrec->off = hdb->file_size;
 		hrec->prev_off = off;
 	} else {
 		hrec->prev_off = off;
-		hrec->off = hdb->file_size;
 	}
 	while (off > 0) {
 		if (storage_engine_read_record(hrec, hdb->fd, off) != PANGU_OK) {
@@ -153,7 +151,7 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 		if (!off) {
 			hrec->next_off = hdb->file_size;
 			/* write next_off of cur record */
-			if (storage_engine_write_currecord_nextoff(hdb->fd, hrec->off, hrec) != PANGU_OK) {
+			if (storage_engine_write_currecord_nextoff(hdb->fd, hrec->off + 16, hrec) != PANGU_OK) {
 				error_msg(PANGU_WRITE_FILE_FAIL, __FILE__, __LINE__, __func__);
 				return PANGU_WRITE_FILE_FAIL;
 			}
@@ -161,6 +159,7 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 		pangu_free(hrec->key);
 		pangu_free(hrec->value);
 	} /* end while */
+	hrec->off = hdb->file_size;
 	hrec->next_off = 0;
 	hrec->key_size = key_size;
 	hrec->value_size = value_size;
@@ -183,6 +182,8 @@ int storage_engine_set(database_t *hdb, const void *key_buf, size_t key_size, co
 	}
 	hdb->file_size += hrec->size;
 	hdb->last_rec_off = hrec->off;
+	pangu_free(hrec->key);
+	pangu_free(hrec->value);
 	pangu_free(hrec);
 	return PANGU_OK;
 }
@@ -216,7 +217,10 @@ int storage_engine_write_currecord_nextoff(int fd, off_t off, record_t *hrec) {
 		error_msg(PANGU_SEEK_FILE_FAIL, __FILE__, __LINE__, __func__);
 		return PANGU_SEEK_FILE_FAIL;
 	}
-	if (storage_engine_write(fd, &hrec->next_off, sizeof(hrec->next_off)) != PANGU_OK) {
+	char buf[HDBIOBUF];
+	memset(buf, 0x0, sizeof(buf));
+	memcpy(buf, &hrec->next_off, sizeof(hrec->next_off));
+	if (storage_engine_write(fd, buf, sizeof(uint64_t)) != PANGU_OK) {
 		error_msg(PANGU_READ_FILE_FAIL, __FILE__, __LINE__, __func__);
 		return PANGU_READ_FILE_FAIL;
 	}
